@@ -15,7 +15,11 @@ class CoingeckoStream(RESTStream):
 
     @property
     def name(self) -> str:
-        return f"{self.config['token']}_history"
+        try:
+            return f"token_{self.config['token']}"
+        except AttributeError:
+            # Fallback for when config is not yet initialized (during testing)
+            return "token_bitcoin"
 
     @property
     def url_base(self) -> str:
