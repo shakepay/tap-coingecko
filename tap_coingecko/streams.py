@@ -12,7 +12,10 @@ from singer_sdk.exceptions import FatalAPIError, RetriableAPIError
 from singer_sdk.streams import RESTStream
 
 class CoingeckoStream(RESTStream):
-    name = "coingecko_token"
+
+    @property
+    def name(self) -> str:
+        return f"{self.config['token']}_history"
 
     @property
     def url_base(self) -> str:
@@ -45,7 +48,7 @@ class CoingeckoStream(RESTStream):
         next_page_token: Any = self.get_next_page_token(None, None, context)
         if not next_page_token:
             return
-        
+
         finished = False
         decorated_request = self.request_decorator(self._request)
 
@@ -76,13 +79,13 @@ class CoingeckoStream(RESTStream):
         self, response: requests.Response, previous_token: Optional[Any], context: Optional[dict]
     ) -> Any:
         """Return token identifying next page or None if all records have been read."""
-        
+
 
         old_token = previous_token or self.get_starting_replication_key_value(context) or self.config["coingecko_start_date"]
         if isinstance(old_token, str):
             old_token = cast(datetime, pendulum.parse(old_token))
         signpost = self.get_replication_key_signpost(context)
-        
+
         if old_token < signpost:
             next_page_token = old_token + timedelta(days=1)
             self.logger.info(f"Next page: {next_page_token}")
@@ -96,7 +99,7 @@ class CoingeckoStream(RESTStream):
         next_page_token: Optional[Any] = None
     ) -> Dict[str, Any]:
         return {"date": next_page_token.strftime('%d-%m-%Y'), "localization": "false"}
-       
+
 
     def get_replication_key_signpost(
         self, context: Optional[dict]
@@ -112,12 +115,12 @@ class CoingeckoStream(RESTStream):
 
     def post_process(self, row: dict, context: Optional[dict] = None) -> dict:
         market_data = row.get('market_data')
-        
+
         if market_data:
             row['price_usd'] = market_data.get('current_price').get('usd')
             row['market_cap_usd'] = market_data.get('market_cap').get('usd')
             row['total_volume_usd'] = market_data.get('total_volume').get('usd')
-        
+
         row['date'] = row['date'].strftime("%Y-%m-%d")
         return row
 
