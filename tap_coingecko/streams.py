@@ -18,8 +18,7 @@ class CoingeckoStream(RESTStream):
         try:
             return f"token_{self.config['token']}"
         except AttributeError:
-            # Fallback for when config is not yet initialized (during testing)
-            return "token_bitcoin"
+            return "token_ethereum"
 
     @property
     def url_base(self) -> str:
